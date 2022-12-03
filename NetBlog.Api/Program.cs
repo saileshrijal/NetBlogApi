@@ -42,7 +42,7 @@ var builder = WebApplication.CreateBuilder(args);
             ValidateIssuer = false,
             ValidateAudience = false,
             RequireExpirationTime = false,
-            ValidateLifetime = true
+            ValidateLifetime = true,
         };
     });
 

@@ -7,7 +7,7 @@ namespace NetBlog.Models
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public string? About { get; set; }
-        public bool Status { get; set; }
+        public bool Status { get; set; } = true;
         public string? ProfilePictureUrl { get; set; }
 
         //Navigation Properies

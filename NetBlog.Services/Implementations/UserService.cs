@@ -50,7 +50,6 @@ namespace NetBlog.Services.Implementations
         public async Task Register(RegisterViewModel vm)
         {
             var user = new RegisterViewModel().ConvertViewModel(vm);
-            user.Status = true;
             var result = await _userManager.CreateAsync(user, vm.Password);
 
             if (result.Succeeded)
