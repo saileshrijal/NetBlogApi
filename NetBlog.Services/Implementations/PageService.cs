@@ -38,7 +38,10 @@ namespace NetBlog.Services.Implementations
         public async Task UpdatePage(PageViewModel vm)
         {
             var page = new PageViewModel().ConvertViewModel(vm);
-            _unitOfWork.Page.Edit(page);
+            var existingVm = await _unitOfWork.Page.GetBy(x => x.Id == vm.Id);
+            existingVm.Title = vm.Title;
+            existingVm.ShortDescription = vm.ShortDescription;
+            existingVm.Description = vm.Description;
             await _unitOfWork.SaveAsync();
         }
     }
