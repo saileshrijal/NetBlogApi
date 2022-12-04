@@ -68,6 +68,8 @@ var app = builder.Build();
 
     DataSeeding();
 
+    app.UseStaticFiles();
+
     app.UseHttpsRedirection();
 
     app.UseAuthentication();

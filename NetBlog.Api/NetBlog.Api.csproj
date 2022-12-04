@@ -25,4 +25,8 @@
     <ProjectReference Include="..\NetBlog.Utilities\NetBlog.Utilities.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\user-img\" />
+  </ItemGroup>
+
 </Project>

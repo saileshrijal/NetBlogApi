@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using NetBlog.Api.Config;
 using NetBlog.Models;
 using NetBlog.Services.Interfaces;
+using NetBlog.Utilities;
 using NetBlog.ViewModels;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -15,7 +17,7 @@ using System.Text;
 
 namespace NetBlog.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -23,53 +25,142 @@ namespace NetBlog.Api.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly JwtConfig _jwtConfig;
-        public UserController(IUserService userService, UserManager<ApplicationUser> userManager, IOptionsMonitor<JwtConfig> optionsMonitor, RoleManager<IdentityRole> roleManager)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public UserController(IUserService userService, UserManager<ApplicationUser> userManager, IOptionsMonitor<JwtConfig> optionsMonitor, RoleManager<IdentityRole> roleManager, IWebHostEnvironment webHostEnvironment)
         {
             _userService = userService;
             _userManager = userManager;
             _jwtConfig = optionsMonitor.CurrentValue;
             _roleManager = roleManager;
+            _webHostEnvironment = webHostEnvironment;
         }
-        
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Index()
+        {
+            var ListOfUsersVm = new List<UserViewModel>();
+            try
+            {
+                ListOfUsersVm = await _userService.GetUsers();
+                return Ok(ListOfUsersVm);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
         [HttpPost]
         [AllowAnonymous]
-        [Route("Login")]
         public async Task<IActionResult> Login(LoginViewModel vm)
         {
             if (!ModelState.IsValid) { return BadRequest("Invalid Payload"); }
-            var existingUser = await _userManager.FindByNameAsync(vm.UserName);
-            if (existingUser == null){ return BadRequest("Invalid Username"); }
-            var checkPassword = await _userManager.CheckPasswordAsync(existingUser, vm.Password);
-            if (!checkPassword) { return BadRequest("Invalid Username or Password"); }
-            if (!existingUser.Status){ return BadRequest("This Username is Currently Inactive"); }
-            var jwtToken = GenerateToken(existingUser);
-            return Ok(new AuthResult
+            try
             {
-                Token = jwtToken,
-                Success = true
-            });
+                var existingUser = await _userManager.FindByNameAsync(vm.UserName);
+                if (existingUser == null) { return BadRequest("Invalid Username"); }
+                var checkPassword = await _userManager.CheckPasswordAsync(existingUser, vm.Password);
+                if (!checkPassword) { return BadRequest("Invalid Username or Password"); }
+                if (!existingUser.Status) { return BadRequest("This Username is Currently Inactive"); }
+                var jwtToken = await GenerateToken(existingUser);
+                return Ok(new AuthResult
+                {
+                    Token = jwtToken,
+                    Success = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost]
-        [Route("Register")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Register(RegisterViewModel vm)
         {
             if (!ModelState.IsValid) { return BadRequest("Invalid Payload"); }
-            var existingUserByUserName = await _userManager.FindByNameAsync(vm.UserName);
-            if (existingUserByUserName != null) { return BadRequest("Username already exist"); }
-            var existingUserByEmail = await _userManager.FindByEmailAsync(vm.Email);
-            if (existingUserByEmail != null) { return BadRequest("Email already exist"); }
-            var user = new RegisterViewModel().ConvertViewModel(vm);
-            var result = await _userManager.CreateAsync(user, vm.Password);
-
-            if (result.Succeeded)
+            try
             {
-                await _userManager.AddToRoleAsync(user, vm.Role);
+                var existingUserByUserName = await _userManager.FindByNameAsync(vm.UserName);
+                if (existingUserByUserName != null) { return BadRequest("Username already exist"); }
+                var existingUserByEmail = await _userManager.FindByEmailAsync(vm.Email);
+                if (existingUserByEmail != null) { return BadRequest("Email already exist"); }
+                await _userService.Register(vm);
+                return Ok();
             }
-            return Ok();
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
+        [HttpPost("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> changeStatus(string id)
+        {
+            try
+            {
+                await _userService.ChangeStatus(id);
+                return Ok("Status Changed");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut]
+        [Authorize]
+        public async Task<IActionResult> Profile([FromForm] ProfileViewModel vm)
+        {
+            if (!ModelState.IsValid) { return BadRequest("Invalid Payload"); }
+            try
+            {
+                var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var loggedInUser = await _userManager.FindByEmailAsync(userEmail);
+                var profileVM = await _userService.GetUserProfileById(loggedInUser.Id);
+                profileVM.About = vm.About;
+                if (vm.ProfilePicture != null)
+                {
+                    profileVM.ProfilePictureUrl = FileHelper.UploadImage(vm.ProfilePicture, _webHostEnvironment, "user-img");
+                }
+                else
+                {
+                    vm.ProfilePictureUrl = profileVM.ProfilePictureUrl;
+                }
+                await _userService.UpdateProfile(profileVM);
+                return Ok("Profile Updated Successfully");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpPut]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel vm)
+        {
+            if (!ModelState.IsValid) { return BadRequest("Invalid Payload"); }
+            try
+            {
+                await _userService.ResetPassword(vm);
+                return Ok("Password Reset Successful");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+                throw;
+            }
+        }
+
+
+
+        //method to generate token
         private async Task<string> GenerateToken(ApplicationUser newUser)
         {
             var jwtHandler = new JwtSecurityTokenHandler();
