@@ -14,7 +14,6 @@ using System.Text;
 
 namespace NetBlog.Api.Controllers.Dashboard
 {
-    [Route("api/Dashboard/[controller]/[action]")]
     [ApiController]
     public class UserController : BaseController
     {
@@ -172,5 +171,6 @@ namespace NetBlog.Api.Controllers.Dashboard
             var jwtToken = jwtHandler.WriteToken(token);
             return jwtToken;
         }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -9,8 +10,9 @@ using System.Security.Claims;
 
 namespace NetBlog.Api.Controllers.Dashboard
 {
-    [Route("api/Dashboard/[controller]")]
     [ApiController]
+    [Authorize]
+    [Route("api/Dashboard/[controller]/[action]")]
     public class BaseController : ControllerBase
     {
         public UserManager<ApplicationUser> _userManager;
@@ -38,13 +40,14 @@ namespace NetBlog.Api.Controllers.Dashboard
             _jwtConfig = optionsMonitor.CurrentValue;
         }
 
-        public async Task<ApplicationUser> GetLoggedInUser()
+
+        protected async Task<ApplicationUser> GetLoggedInUser()
         {
             var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return await _userManager.FindByEmailAsync(userEmail);
         }
 
-        public async Task<string> GetRoleOfUser(ApplicationUser user)
+        protected async Task<string> GetRoleOfUser(ApplicationUser user)
         {
             var roles = await _userManager.GetRolesAsync(user);
             return roles[0];
