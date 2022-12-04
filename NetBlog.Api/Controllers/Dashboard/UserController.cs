@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -11,38 +9,26 @@ using NetBlog.Services.Interfaces;
 using NetBlog.Utilities;
 using NetBlog.ViewModels;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Security.Claims;
 using System.Text;
 
-namespace NetBlog.Api.Controllers
+namespace NetBlog.Api.Controllers.Dashboard
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api/Dashboard/[controller]/[action]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class UserController : BaseController
     {
-        private readonly IUserService _userService;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly JwtConfig _jwtConfig;
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        public UserController(IUserService userService, UserManager<ApplicationUser> userManager, IOptionsMonitor<JwtConfig> optionsMonitor, RoleManager<IdentityRole> roleManager, IWebHostEnvironment webHostEnvironment)
+        public UserController(UserManager<ApplicationUser> userManager, IUserService userService, ICategoryService categoryService, IPageService pageService, IWebHostEnvironment webHostEnvironment, IPostService postService, IOptionsMonitor<JwtConfig> optionsMonitor) : base(userManager, userService, categoryService, pageService, webHostEnvironment, postService, optionsMonitor)
         {
-            _userService = userService;
-            _userManager = userManager;
-            _jwtConfig = optionsMonitor.CurrentValue;
-            _roleManager = roleManager;
-            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
-            var ListOfUsersVm = new List<UserViewModel>();
             try
             {
-                ListOfUsersVm = await _userService.GetUsers();
+                var ListOfUsersVm = await _userService.GetUsers();
                 return Ok(ListOfUsersVm);
             }
             catch (Exception ex)
@@ -99,7 +85,7 @@ namespace NetBlog.Api.Controllers
 
         [HttpPost("{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> changeStatus(string id)
+        public async Task<IActionResult> ChangeStatus(string id)
         {
             try
             {
@@ -120,7 +106,7 @@ namespace NetBlog.Api.Controllers
             try
             {
                 var userEmail = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var loggedInUser = await _userManager.FindByEmailAsync(userEmail);
+                var loggedInUser = await GetLoggedInUser();
                 var profileVM = await _userService.GetUserProfileById(loggedInUser.Id);
                 profileVM.About = vm.About;
                 if (vm.ProfilePicture != null)
