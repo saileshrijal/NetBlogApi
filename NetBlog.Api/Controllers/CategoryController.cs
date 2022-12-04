@@ -7,7 +7,7 @@ using NetBlog.Models;
 using NetBlog.Services.Interfaces;
 using NetBlog.ViewModels;
 
-namespace NetBlog.Api.Controllers.Dashboard
+namespace NetBlog.Api.Controllers
 {
     [Authorize(Roles = "Admin")]
     [ApiController]
@@ -23,7 +23,7 @@ namespace NetBlog.Api.Controllers.Dashboard
             try
             {
                 var listOfCategories = await _categoryService.GetCategories();
-                return Ok(listOfCategories.Select(x=> new
+                return Ok(listOfCategories.Select(x => new
                 {
                     x.Id,
                     x.UserId,

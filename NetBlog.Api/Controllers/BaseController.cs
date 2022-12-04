@@ -8,11 +8,11 @@ using NetBlog.Models;
 using NetBlog.Services.Interfaces;
 using System.Security.Claims;
 
-namespace NetBlog.Api.Controllers.Dashboard
+namespace NetBlog.Api.Controllers
 {
     [ApiController]
     [Authorize]
-    [Route("api/Dashboard/[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class BaseController : ControllerBase
     {
         public UserManager<ApplicationUser> _userManager;

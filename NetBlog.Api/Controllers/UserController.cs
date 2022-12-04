@@ -12,7 +12,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace NetBlog.Api.Controllers.Dashboard
+namespace NetBlog.Api.Controllers
 {
     [ApiController]
     public class UserController : BaseController

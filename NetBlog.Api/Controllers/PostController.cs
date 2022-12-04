@@ -7,7 +7,7 @@ using NetBlog.Services.Interfaces;
 using NetBlog.Utilities;
 using NetBlog.ViewModels;
 
-namespace NetBlog.Api.Controllers.Dashboard
+namespace NetBlog.Api.Controllers
 {
     [ApiController]
     public class PostController : BaseController

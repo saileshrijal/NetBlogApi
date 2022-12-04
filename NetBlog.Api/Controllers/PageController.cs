@@ -10,7 +10,7 @@ using NetBlog.Utilities;
 using NetBlog.ViewModels;
 using System.Data;
 
-namespace NetBlog.Api.Controllers.Dashboard
+namespace NetBlog.Api.Controllers
 {
     [ApiController]
     [Authorize(Roles = "Admin")]
@@ -28,7 +28,7 @@ namespace NetBlog.Api.Controllers.Dashboard
                 var vm = await _pageService.GetPage("About");
                 return Ok(vm);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -64,7 +64,7 @@ namespace NetBlog.Api.Controllers.Dashboard
                 {
                     vm.ThumbnailUrl = FileHelper.UploadImage(vm.Thumbnail, _webHostEnvironment, "page-img");
                 }
-                
+
                 await _pageService.UpdatePage(vm);
                 return Ok("About Page Updated Successfully");
             }
@@ -98,7 +98,7 @@ namespace NetBlog.Api.Controllers.Dashboard
                 {
                     vm.ThumbnailUrl = FileHelper.UploadImage(vm.Thumbnail, _webHostEnvironment, "page-img");
                 }
-                
+
                 vm.Slug = "Contact";
                 await _pageService.CreatePage(vm);
                 return Ok("Contact Page Created Successfully");
